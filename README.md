@@ -1,6 +1,8 @@
-# ReactTail
+# Post React Redux
 
-Starter template
+## Description
+
+A posts app using React and Redux-Toolkit
 
 ## Feature
 
@@ -14,4 +16,9 @@ Starter template
 
 ```
 npm install
+```
+
+```
+npm run dev
+// Open localhost:3000
 ```

@@ -14,7 +14,7 @@ const PostAuthor = ({ userId }) => {
 };
 
 PostAuthor.propTypes = {
-  userId: PropTypes.string,
+  userId: PropTypes.number,
 };
 
 export default PostAuthor;
