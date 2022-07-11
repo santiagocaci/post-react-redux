@@ -1,27 +1,38 @@
 import { useSelector } from 'react-redux';
 import { selectUserById } from './usersSlices';
-import { selectPostsByUser } from '../posts/postsSlice';
 import { Link, useParams } from 'react-router-dom';
+import { useGetPostsByUserIdQuery } from '../posts/postsSlice';
 
 const UserPage = () => {
   const { userId } = useParams();
   const user = useSelector((state) => selectUserById(state, Number(userId)));
 
-  const postForUser = useSelector((state) =>
-    selectPostsByUser(state, Number(userId))
-  );
+  const {
+    data: postsForUser,
+    isLoading,
+    isError,
+    error,
+    isSuccess,
+  } = useGetPostsByUserIdQuery(userId);
 
-  const postTitles = postForUser.map((post) => (
-    <li key={post.id} className=' bg-teal-600 p-4 rounded border-2'>
-      <Link to={`/post/${post.id}`} className='text-xl pb-2 font-semibold'>
-        {post.title}
-      </Link>
-    </li>
-  ));
+  let content;
+  if (isLoading) {
+    content = <p>Loading...</p>;
+  } else if (isSuccess) {
+    const { ids, entities } = postsForUser;
+    content = ids.map((id) => (
+      <li key={id}>
+        <Link to={`/post/${id}`}>{entities[id].title}</Link>
+      </li>
+    ));
+  } else if (isError) {
+    content = <p>{error}</p>;
+  }
+
   return (
     <section className='w-4/5 py-4'>
       <h2 className='text-3xl font-bold mb-2'>{user?.name}</h2>
-      <ol className='flex flex-col gap-2'>{postTitles}</ol>
+      <ol className='flex flex-col gap-2'>{content}</ol>
     </section>
   );
 };

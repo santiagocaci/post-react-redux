@@ -1,22 +1,29 @@
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { useParams, useNavigate } from 'react-router-dom';
 
-import {
-  deletePost,
-  selectPostById,
-  updatePost,
-} from '../features/posts/postsSlice';
 import { selectAllUsers } from '../features/users/usersSlices';
+import {
+  useUpdatePostMutation,
+  // useDeletePostMutation,
+  selectPostById,
+} from '../features/posts/postsSlice';
 
 const EditPostForm = () => {
+  const [updatePost, { isLoading }] = useUpdatePostMutation();
+  // const [deletePost] = useDeletePostMutation();
+
   const { postId } = useParams();
   const navigate = useNavigate();
 
-  const dispatch = useDispatch();
-  const post = useSelector((state) => selectPostById(state, Number(postId))); //! Number(postId)
+  const post = useSelector((state) => selectPostById(state, Number(postId)));
 
   const users = useSelector(selectAllUsers);
+
+  const [stateForm, setStateForm] = useState({
+    title: post?.title,
+    content: post?.body,
+  });
 
   if (!post) {
     <section>
@@ -24,16 +31,10 @@ const EditPostForm = () => {
     </section>;
   }
 
-  const [stateForm, setStateForm] = useState({
-    title: post.title,
-    content: post.body,
-  });
-  const [userId, setUserId] = useState(post.userId);
-  const [addRequestStatus, setAddRequestStatus] = useState('idle');
+  const [userId, setUserId] = useState(post?.userId);
 
   const canSave =
-    [stateForm.title, stateForm.content, userId].every(Boolean) &&
-    addRequestStatus === 'idle';
+    [stateForm.title, stateForm.content, userId].every(Boolean) && !isLoading;
 
   const onInputChange = (e) => {
     const { value, name } = e.target;
@@ -45,31 +46,23 @@ const EditPostForm = () => {
 
   const onAuthorChange = (e) => setUserId(Number(e.target.value));
 
-  const onFormSubmit = (e) => {
+  const onFormSubmit = async (e) => {
     e.preventDefault();
-
-    // dispatch(addPost(stateForm.title, stateForm.content, userId));
-    // setStateForm({ title: '', content: '' });
 
     if (canSave) {
       try {
-        setAddRequestStatus('pending');
-        dispatch(
-          updatePost({
-            id: post.id,
-            title: stateForm.title,
-            body: stateForm.content,
-            userId,
-            reactions: post.reactions,
-          })
-        ).unwrap();
+        await updatePost({
+          id: post.id,
+          title: stateForm.title,
+          body: stateForm.content,
+          userId,
+          reactions: post.reactions,
+        }).unwrap();
         setStateForm({ title: '', content: '' });
         setUserId('');
         navigate(`/post/${postId}`);
       } catch (error) {
         console.error('Failed to save the post', error);
-      } finally {
-        setAddRequestStatus('idle');
       }
     }
   };
@@ -84,23 +77,21 @@ const EditPostForm = () => {
     </option>
   ));
 
-  const onDeletePostClick = () => {
-    try {
-      setAddRequestStatus('pending');
-      dispatch(deletePost({ id: post.id })).unwrap();
-
-      setStateForm({
-        title: '',
-        content: '',
-      });
-      setUserId('');
-      navigate('/');
-    } catch (error) {
-      console.error('Failed to delete the post', error);
-    } finally {
-      setAddRequestStatus('idle');
-    }
-  };
+  // console.log('render');
+  // const onDeletePostClick = async () => {
+  //   try {
+  //     console.log(post);
+  //     await deletePost({ id: post.id }).unwrap();
+  //     setStateForm({
+  //       title: '',
+  //       content: '',
+  //     });
+  //     setUserId('');
+  //     navigate('/');
+  //   } catch (error) {
+  //     console.error('Failed to delete the post', error);
+  //   }
+  // };
 
   return (
     <section className='w-4/5 max-w-screen-md my-2'>
@@ -149,14 +140,14 @@ const EditPostForm = () => {
           <option value=''></option>
           {usersOptions}
         </select>
-        <button
+        {/* <button
           type='submit'
           className='block text-lg font-semibold bg-teal-600 px-2 py-1 rounded hover:bg-teal-700 mt-3 disabled:bg-slate-500'
           disabled={!canSave}
         >
           Save Post
         </button>
-        <button onClick={onDeletePostClick}>Delete Post</button>
+        <button onClick={onDeletePostClick}>Delete Post</button> */}
       </form>
     </section>
   );

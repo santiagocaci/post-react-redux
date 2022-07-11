@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
+import { useAddNewPostMutation } from '../features/posts/postsSlice';
 import { useNavigate } from 'react-router-dom';
-import { addNewPost } from '../features/posts/postsSlice';
+
 import { selectAllUsers } from '../features/users/usersSlices';
 
 const AddPostsForm = () => {
-  const dispatch = useDispatch();
+  const [addNewPost, { isLoading }] = useAddNewPostMutation();
   const [stateForm, setStateForm] = useState({
     title: '',
     content: '',
@@ -13,12 +14,10 @@ const AddPostsForm = () => {
 
   const navigate = useNavigate();
   const [userId, setUserId] = useState('');
-  const [addRequestStatus, setAddRequestStatus] = useState('idle');
   const users = useSelector(selectAllUsers);
 
   const canSave =
-    [stateForm.title, stateForm.content, userId].every(Boolean) &&
-    addRequestStatus === 'idle';
+    [stateForm.title, stateForm.content, userId].every(Boolean) && !isLoading;
 
   const onInputChange = (e) => {
     const { value, name } = e.target;
@@ -30,29 +29,21 @@ const AddPostsForm = () => {
 
   const onAuthorChange = (e) => setUserId(e.target.value);
 
-  const onFormSubmit = (e) => {
+  const onFormSubmit = async (e) => {
     e.preventDefault();
-
-    // dispatch(addPost(stateForm.title, stateForm.content, userId));
-    // setStateForm({ title: '', content: '' });
 
     if (canSave) {
       try {
-        setAddRequestStatus('pending');
-        dispatch(
-          addNewPost({
-            title: stateForm.title,
-            body: stateForm.content,
-            userId,
-          })
-        ).unwrap();
+        await addNewPost({
+          title: stateForm.title,
+          body: stateForm.content,
+          userId,
+        }).unwrap();
         setStateForm({ title: '', content: '' });
         setUserId('');
         navigate('/');
       } catch (error) {
         console.error('Failed to save the post', error);
-      } finally {
-        setAddRequestStatus('idle');
       }
     }
   };
